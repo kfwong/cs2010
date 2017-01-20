@@ -21,18 +21,7 @@
     <favorites_list name="PS0-B" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="Addition.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/Addition.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.39955604">
-              <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <leaf />
   </component>
   <component name="GradleLocalSettings">
     <option name="externalProjectsViewState">
@@ -118,7 +107,7 @@
     <property name="options.splitter.main.proportions" value="0.3" />
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../PS1-A" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../PS1-C" />
     <property name="recentsLimit" value="5" />
     <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.0" />
@@ -399,12 +388,12 @@
       <updated>1484126193061</updated>
       <workItem from="1484126194111" duration="2257000" />
       <workItem from="1484751471829" duration="97000" />
-      <workItem from="1484919292584" duration="14000" />
+      <workItem from="1484919292584" duration="177000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="2368000" />
+    <option name="totallyTimeSpent" value="2531000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="698" y="3" width="1214" height="1051" extended-state="0" />
@@ -465,6 +454,14 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Addition.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../PS1-C/EmergencyRoom.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
