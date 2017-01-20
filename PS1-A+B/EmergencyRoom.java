@@ -5,7 +5,19 @@ import java.io.*;
 
 // write your matric number here: A0138862W
 // write your name here: Wong Kang Fei
-// write list of collaborators here: NIL
+// write list of collaborators here:
+/*
+ Charles Goh Chang Kang: For his test cases! @ 21 August 2016.
+
+ Chow Yuan Bin: for his hints on the "tie breaker" on same post @ 21 Aug 2016.
+
+ I didn't realize pseudo-code in lecture note did not preserve the natural order of the PQ in heap.
+ The test cases Charles provided allows me to discover the bug.
+
+ In addtion, this Stackoverflow post helps.
+ http://stackoverflow.com/questions/6909617/how-to-preserve-the-order-of-elements-of-the-same-priority-in-a-priority-queue-i
+
+ */
 // year 2017 hash code: oIxT79fEI2IQdQqvg1rx (do NOT delete this line)
 
 class EmergencyRoom {
@@ -94,7 +106,7 @@ class PatientHeap {
     private int heapSize;
 
     public PatientHeap(){
-        this.patients = new ArrayList<Patient>();
+        this.patients = new ArrayList<>();
         this.heapSize = 0;
 
         // dummy object at 0 index
@@ -197,13 +209,12 @@ class PatientHeap {
         Patient parent = patients.get(parentOf(index));
         Patient child = patients.get(index);
 
-        int parentEmergencyLevel = parent.getEmergencyLevel();
-        int childEmergencyLevel = child.getEmergencyLevel();
-
-        while( index > 1 && parentEmergencyLevel < childEmergencyLevel){
+        while( index > 1 && parent.compareTo(child) == -1){
             swap(parentOf(index), index);
 
             index = parentOf(index);
+
+            parent = patients.get(parentOf(index));
         }
     }
 
@@ -220,7 +231,7 @@ class PatientHeap {
             if(leftChildIndex != -1) { // if left child exist
                 Patient leftChild = patients.get(leftChildIndex);
 
-                if (leftChildIndex <= heapSize && max.getEmergencyLevel() < leftChild.getEmergencyLevel()) {
+                if (leftChildIndex <= heapSize && max.compareTo(leftChild) == -1) {
                     maxIndex = leftChildIndex;
                     max = leftChild;
                 }
@@ -230,7 +241,7 @@ class PatientHeap {
             if(rightChildIndex != -1) { // if right child exist
                 Patient rightChild = patients.get(rightChildIndex);
 
-                if (rightChildIndex <= heapSize && max.getEmergencyLevel() < rightChild.getEmergencyLevel()) {
+                if (rightChildIndex <= heapSize && max.compareTo(rightChild) == -1) {
                     maxIndex = rightChildIndex;
                     max = rightChild;
                 }
@@ -306,13 +317,23 @@ class PatientHeap {
 
 }
 
-class Patient{
+class Patient implements Comparable<Patient>{
+    private static int nextQueueNum = 0;
+
+    private int queueNum;
     private String name;
     private int emergencyLevel;
 
     public Patient(String name, int emergencyLevel){
+        this.queueNum = nextQueueNum;
         this.name = name;
         this.emergencyLevel = emergencyLevel;
+
+        nextQueueNum++;
+    }
+
+    public int getQueueNum() {
+        return queueNum;
     }
 
     public String getName() {
@@ -325,6 +346,15 @@ class Patient{
 
     public void setEmergencyLevel(int emergencyLevel) {
         this.emergencyLevel = emergencyLevel;
+    }
+
+    @Override
+    public int compareTo(Patient o) {
+        if(this.getEmergencyLevel() > o.getEmergencyLevel() || (this.getEmergencyLevel() == o.getEmergencyLevel() && this.getQueueNum() < o.getQueueNum())){
+            return 1;
+        }else{
+            return -1;
+        }
     }
 }
 
