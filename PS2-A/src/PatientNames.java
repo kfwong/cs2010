@@ -5,11 +5,10 @@
 
 import java.util.*;
 import java.io.*;
-import java.util.stream.IntStream;
 
-// write your matric number here:
-// write your name here:
-// write list of collaborators here:
+// write your matric number here: A0138862W
+// write your name here: Wong Kang Fei
+// write list of collaborators here: Google, StackOverflow
 // year 2017 hash code: DZAjKugdE9QiOQKGFbut (do NOT delete this line)
 
 class PatientNames {
@@ -18,6 +17,7 @@ class PatientNames {
 
     // --------------------------------------------
 
+    private PatientDirectory patientDirectory;
 
     // --------------------------------------------
 
@@ -28,6 +28,7 @@ class PatientNames {
 
         // --------------------------------------------
 
+        this.patientDirectory = new PatientDirectory();
 
         // --------------------------------------------
     }
@@ -40,6 +41,9 @@ class PatientNames {
 
         // --------------------------------------------
 
+        Patient patient = new Patient(patientName, gender);
+        patientDirectory.insert(patient);
+
 
         // --------------------------------------------
     }
@@ -51,12 +55,13 @@ class PatientNames {
 
         // --------------------------------------------
 
+        patientDirectory.remove(new Patient(patientName, -1));
 
         // --------------------------------------------
     }
 
     int Query(String START, String END, int gender) {
-        int ans = 0;
+        int ans;
 
         // You have to answer how many patient name starts
         // with prefix that is inside query interval [START..END)
@@ -65,6 +70,7 @@ class PatientNames {
 
         // --------------------------------------------
 
+        ans = patientDirectory.rangeSearch(START, END, gender);
 
         // --------------------------------------------
 
@@ -96,28 +102,77 @@ class PatientNames {
         // do not alter this method to avoid unnecessary errors with the automated judging
         PatientNames ps2 = new PatientNames();
         ps2.run();
+    }
+}
 
+class PatientDirectory extends BinarySearchTree<Patient> {
+
+    public int rangeSearch(String start, String end, int gender) {
+        return rangeSearch(root, start, end, gender);
+    }
+
+    private int rangeSearch(ListNode<Patient> currNode, String start, String end, int gender) {
         /*
-        BinarySearchTree<Integer> bst = new BinarySearchTree<>();
-        IntStream.of(new int[]{63, 11, 57, 59, 12, 73, 44, 25, 54, 23, 49, 39, 22, 3, 8, 93, 88, 97, 32}).forEach(i -> {
-            //new Random().ints(20, 1, 100).distinct().forEach(i->{
-            //System.out.print(i +",");
-            bst.insert(i);
-        });
+        Modified in-order traversal
 
-        bst.printInOrder();
+        1) If value of root’s key is greater than k1, then recursively call in left subtree.
+        2) If value of root’s key is in range, then print the root’s key.
+        3) If value of root’s key is smaller than k2, then recursively call in right subtree.
+         */
 
-        bst.remove(49);
+        if (currNode == null) {
+            return 0;
+        }
 
-        bst.printInOrder();
+        int total = 0;
 
-        //System.out.println(bst.minimum());
-        */
+        if (currNode.getData().getName().compareTo(start) >= 0) {
+            //System.out.println(currNode.getData().getName());
+            total += rangeSearch(currNode.getLeft(), start, end, gender);
+        }
+
+        if (currNode.getData().getName().compareTo(start) >= 0 && currNode.getData().getName().compareTo(end) < 0) {
+            if (gender == 0 || gender == currNode.getData().getGender()) {
+                //System.out.println(currNode.getData().getName());
+                total++;
+            }
+        }
+
+        if (currNode.getData().getName().compareTo(end) < 0) {
+            //System.out.println(currNode.getData().getName());
+            total += rangeSearch(currNode.getRight(), start, end, gender);
+        }
+
+        return total;
+    }
+}
+
+class Patient implements Comparable<Patient> {
+    private String name;
+    private int gender;
+
+    public Patient(String name, int gender) {
+        this.name = name;
+        this.gender = gender;
+    }
+
+    public int getGender() {
+        return gender;
+    }
+
+    public String getName() {
+
+        return name;
+    }
+
+    @Override
+    public int compareTo(Patient o) {
+        return this.name.compareTo(o.getName());
     }
 }
 
 class BinarySearchTree<E extends Comparable<E>> {
-    private ListNode<E> root;
+    protected ListNode<E> root;
 
     public BinarySearchTree() {
         this.root = null;
@@ -128,7 +183,7 @@ class BinarySearchTree<E extends Comparable<E>> {
     }
 
     public void remove(E data) {
-        remove(null, root, data);
+        remove(root, data);
     }
 
     public int height() {
@@ -144,7 +199,7 @@ class BinarySearchTree<E extends Comparable<E>> {
         System.out.println();
     }
 
-    private ListNode<E> insert(ListNode<E> currNode, E data) {
+    protected ListNode<E> insert(ListNode<E> currNode, E data) {
         if (currNode == null) {
             return new ListNode<>(data);
         }
@@ -152,11 +207,15 @@ class BinarySearchTree<E extends Comparable<E>> {
         int comparison = data.compareTo(currNode.getData());
 
         if (comparison <= 0) {
-            currNode.setLeft(insert(currNode.getLeft(), data));
+            ListNode<E> insertion = insert(currNode.getLeft(), data);
+            currNode.setLeft(insertion);
+            insertion.setParent(currNode);
         }
 
         if (comparison > 0) {
-            currNode.setRight(insert(currNode.getRight(), data));
+            ListNode<E> insertion = insert(currNode.getRight(), data);
+            currNode.setRight(insertion);
+            insertion.setParent(currNode);
         }
 
         // update height of nodes after insertion
@@ -166,7 +225,7 @@ class BinarySearchTree<E extends Comparable<E>> {
         return currNode;
     }
 
-    private void remove(ListNode<E> prevNode, ListNode<E> currNode, E data) {
+    protected void remove(ListNode<E> currNode, E data) {
         if (currNode == null) {
             throw new NoSuchElementException();
         }
@@ -174,11 +233,11 @@ class BinarySearchTree<E extends Comparable<E>> {
         int comparison = data.compareTo(currNode.getData());
 
         if (comparison < 0) {
-            remove(currNode, currNode.getLeft(), data);
+            remove(currNode.getLeft(), data);
         }
 
         if (comparison > 0) {
-            remove(currNode, currNode.getRight(), data);
+            remove(currNode.getRight(), data);
         }
 
         if (comparison == 0) {
@@ -193,26 +252,42 @@ class BinarySearchTree<E extends Comparable<E>> {
 
                 ListNode<E> successor = successor(currNode);
                 currNode.setData(successor.getData());
-                remove(currNode, currNode.getRight(), successor.getData());
+                remove(currNode.getRight(), successor.getData());
 
             } else if (!currNode.hasLeft() && !currNode.hasRight()) { // has no child
-                if (prevNode.getLeft() == currNode) {
-                    prevNode.setLeft(null);
-                } else {
-                    prevNode.setRight(null);
+                if (currNode == root) {
+                    root = null;
+                } else if (currNode.getParent().getLeft() == currNode) {
+                    currNode.getParent().setLeft(null);
+                } else if (currNode.getParent().getRight() == currNode) {
+                    currNode.getParent().setRight(null);
                 }
             } else { // current node has one child
-                if (prevNode.getLeft() == currNode) { // current node is at the left of parent node
+                if (currNode == root) { // current node is the root
                     if (currNode.hasLeft()) {
-                        prevNode.setLeft(currNode.getLeft());
+                        root = currNode.getLeft();
                     } else if (currNode.hasRight()) {
-                        prevNode.setLeft(currNode.getRight());
+                        root = currNode.getRight();
                     }
-                } else if (prevNode.getRight() == currNode) { // current node is at the right of parent node
+                } else if (currNode == currNode.getParent().getLeft()) { // current node is at the left of parent node
                     if (currNode.hasLeft()) {
-                        prevNode.setRight(currNode.getLeft());
+                        currNode.getLeft().setParent(currNode.getParent());
+                        currNode.getParent().setLeft(currNode.getLeft());
+                        currNode.setLeft(null);
                     } else if (currNode.hasRight()) {
-                        prevNode.setRight(currNode.getRight());
+                        currNode.getRight().setParent(currNode.getParent());
+                        currNode.getParent().setLeft(currNode.getRight());
+                        currNode.setRight(null);
+                    }
+                } else if (currNode == currNode.getParent().getRight()) { // current node is at the right of parent node
+                    if (currNode.hasLeft()) {
+                        currNode.getLeft().setParent(currNode.getParent());
+                        currNode.getParent().setRight(currNode.getLeft());
+                        currNode.setLeft(null);
+                    } else if (currNode.hasRight()) {
+                        currNode.getRight().setParent(currNode.getParent());
+                        currNode.getParent().setRight(currNode.getRight());
+                        currNode.setRight(null);
                     }
                 }
             }
@@ -220,11 +295,75 @@ class BinarySearchTree<E extends Comparable<E>> {
 
     }
 
-    private ListNode<E> successor(ListNode<E> currNode) {
+    protected void rebalance(ListNode<E> currNode) {
+        int currBalanceFactor = balanceFactor(currNode);
+        int leftBalanceFactor = balanceFactor(currNode.getLeft());
+        int rightBalanceFactor = balanceFactor(currNode.getRight());
+
+        if (currBalanceFactor == 2 && leftBalanceFactor == -1) {
+            rotateLeft(currNode.getLeft());
+            rotateRight(currNode);
+        } else if (currBalanceFactor == 2 && (leftBalanceFactor >= 0 && leftBalanceFactor <= 1)) {
+            rotateRight(currNode);
+        }else if(currBalanceFactor == -2 && rightBalanceFactor == 1){
+            rotateRight(currNode.getRight());
+            rotateLeft(currNode);
+        }else if(currBalanceFactor == -2 && (rightBalanceFactor >= -1 && rightBalanceFactor <= 0)){
+            rotateLeft(currNode);
+        }
+    }
+
+    protected int balanceFactor(ListNode<E> currNode) {
+        if (currNode == null) {
+            return 0;
+        }
+
+        return currNode.getLeft().getHeight() - currNode.getRight().getHeight();
+    }
+
+    protected ListNode<E> rotateLeft(ListNode<E> currNode) {
+        if (currNode.hasRight()) {
+            ListNode<E> rightSubtree = currNode.getRight();
+            rightSubtree.setParent(currNode.getParent());
+            currNode.setParent(rightSubtree);
+            currNode.setRight(rightSubtree.getLeft());
+
+            if (rightSubtree.hasLeft()) {
+                rightSubtree.getLeft().setParent(currNode);
+            }
+
+            rightSubtree.setLeft(currNode);
+
+            return rightSubtree;
+        }
+
+        return null;
+    }
+
+    protected ListNode<E> rotateRight(ListNode<E> currNode) {
+        if (currNode.hasLeft()) {
+            ListNode<E> leftSubtree = currNode.getLeft();
+            leftSubtree.setParent(currNode.getParent());
+            currNode.setParent(leftSubtree);
+            currNode.setLeft(leftSubtree.getRight());
+
+            if (leftSubtree.hasRight()) {
+                leftSubtree.getRight().setParent(currNode);
+            }
+
+            leftSubtree.setRight(currNode);
+
+            return leftSubtree;
+        }
+
+        return null;
+    }
+
+    protected ListNode<E> successor(ListNode<E> currNode) {
         return minimum(currNode.getRight());
     }
 
-    private ListNode<E> minimum(ListNode<E> currNode) {
+    protected ListNode<E> minimum(ListNode<E> currNode) {
         if (currNode == null) {
             // empty tree
             throw new NoSuchElementException();
@@ -237,7 +376,7 @@ class BinarySearchTree<E extends Comparable<E>> {
         }
     }
 
-    private int height(ListNode<E> currNode) {
+    protected int height(ListNode<E> currNode) {
         if (currNode == null) {
             return -1;
         } else {
@@ -247,23 +386,26 @@ class BinarySearchTree<E extends Comparable<E>> {
         }
     }
 
-    private void printInOrder(ListNode<E> currNode) {
+    protected void printInOrder(ListNode<E> currNode) {
         if (currNode != null) {
             printInOrder(currNode.getLeft());
             System.out.print(currNode.getData() + " ");
             printInOrder(currNode.getRight());
         }
     }
+
 }
 
 class ListNode<E extends Comparable<E>> {
     private E data;
     private int height;
+    private ListNode<E> parent;
     private ListNode<E> left;
     private ListNode<E> right;
 
     public ListNode(E data) {
         this.data = data;
+        this.parent = null;
         this.left = null;
         this.right = null;
     }
@@ -282,6 +424,14 @@ class ListNode<E extends Comparable<E>> {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public ListNode<E> getParent() {
+        return parent;
+    }
+
+    public void setParent(ListNode<E> parent) {
+        this.parent = parent;
     }
 
     public ListNode<E> getLeft() {
