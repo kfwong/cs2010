@@ -71,7 +71,9 @@ class PatientNames {
 
         // --------------------------------------------
 
-        System.out.println(patients.q(START));
+        String r = patients.q(START);
+        System.out.println(r);
+        System.out.println(patients.rank(r));
 
         // --------------------------------------------
 
@@ -121,6 +123,10 @@ class BinarySearchTree<E extends Comparable<E>> {
 
     public E q(E data) {
         return findGreaterOrEquals(root, null, data).getData();
+    }
+
+    public int rank(E data) {
+        return rank(root, 0, data);
     }
 
     protected ListNode<E> insert(ListNode<E> currNode, E data) {
@@ -235,8 +241,31 @@ class BinarySearchTree<E extends Comparable<E>> {
         return currNode;
     }
 
-    private int rank(ListNode<E> currNode, ListNode<E> targetNode){
-        return 0;
+    // precond: data must exist
+    private int rank(ListNode<E> currNode, int currResult, E data) {
+
+        if (data.compareTo(currNode.getData()) < 0) {
+            // data is less than current node, recurse left
+            return rank(currNode.getLeft(), currResult, data);
+        } else if (data.compareTo(currNode.getData()) > 0) {
+            // data is greater than current node, recurse right
+
+            if (currNode.hasLeft()) {
+                currResult += currNode.getLeft().getSize();
+            }
+
+            currResult += 1;
+
+            return rank(currNode.getRight(), currResult, data);
+        } else {
+            // data is equal to current node, return result
+
+            if(currNode.hasLeft() && currNode.hasRight()){
+                currResult += currNode.getLeft().getSize();
+            }
+
+            return currResult;
+        }
     }
 
     private ListNode<E> findGreaterOrEquals(ListNode<E> currNode, ListNode<E> currResult, E data) {
@@ -245,7 +274,7 @@ class BinarySearchTree<E extends Comparable<E>> {
             return currResult;
         }
 
-        if(data.compareTo(currNode.getData()) <= 0){
+        if (data.compareTo(currNode.getData()) <= 0) {
             // data is less than or equal to the current node
             // set the result so far to current node
             currResult = currNode;
