@@ -21,7 +21,11 @@ class PatientNames {
 
     // --------------------------------------------
 
-    BinarySearchTree<String> patients;
+    public static final int MALE = 1;
+    public static final int FEMALE = 2;
+
+    private BinarySearchTree<String> malePatients;
+    private BinarySearchTree<String> femalePatients;
 
     // --------------------------------------------
 
@@ -32,7 +36,8 @@ class PatientNames {
 
         // --------------------------------------------
 
-        patients = new BinarySearchTree<>();
+        malePatients = new BinarySearchTree<>();
+        femalePatients = new BinarySearchTree<>();
 
         // --------------------------------------------
     }
@@ -44,8 +49,16 @@ class PatientNames {
         // write your answer here
 
         // --------------------------------------------
+        if (gender == MALE) {
+            malePatients.insert(patientName);
+        } else if (gender == FEMALE) {
+            femalePatients.insert(patientName);
+        } else {
+            // wtf?
+            assert false : "gender must be 1 or 2. Go home you're drunk.";
+        }
 
-        patients.insert(patientName);
+
 
         // --------------------------------------------
     }
@@ -57,11 +70,20 @@ class PatientNames {
 
         // --------------------------------------------
 
+        if (malePatients.contains(patientName)) {
+            //System.out.println("remove male");
+            malePatients.remove(patientName);
+        } else if (femalePatients.contains(patientName)) {
+            //System.out.println("remove female");
+            femalePatients.remove(patientName);
+        }
+
+
 
         // --------------------------------------------
     }
 
-    int Query(String START, String END, int gender) {
+    int Query(String start, String end, int gender) {
         int ans = 0;
 
         // You have to answer how many patient name starts
@@ -71,9 +93,15 @@ class PatientNames {
 
         // --------------------------------------------
 
-        String r = patients.q(START);
-        System.out.println(r);
-        System.out.println(patients.rank(r));
+
+        if (gender == MALE) {
+            ans = malePatients.rangeCount(start, end);
+        } else if (gender == FEMALE) {
+            ans = femalePatients.rangeCount(start, end);
+        } else {
+
+            ans = malePatients.rangeCount(start, end) + femalePatients.rangeCount(start, end);
+        }
 
         // --------------------------------------------
 
@@ -91,15 +119,32 @@ class PatientNames {
                 break;
             } else if (command == 1) { // AddPatient
                 AddPatient(st.nextToken(), Integer.parseInt(st.nextToken()));
-                Printer.print(patients.root);
+
+/*
+                System.out.println("-----insert--------");
+                malePatients.inOrderTraversal(malePatients.root);
+                System.out.println();
+                femalePatients.inOrderTraversal(femalePatients.root);
+*/
+/*
+                System.out.println("-------------");
+                System.out.println(malePatients.minimum()+":"+malePatients.maximum());
+                System.out.println(femalePatients.minimum() + ":" + femalePatients.maximum());
+*/
             } else if (command == 2) { // RemovePatient
                 RemovePatient(st.nextToken());
-            } else { // if (command == 3) // Query
+/*
+                System.out.println("-----delete--------");
+                malePatients.inOrderTraversal(malePatients.root);
+                System.out.println();
+                femalePatients.inOrderTraversal(femalePatients.root);
+                */
+            } else // if (command == 3) // Query
                 pr.println(Query(st.nextToken(), // START
                         st.nextToken(), // END
                         Integer.parseInt(st.nextToken()))); // GENDER
-            }
         }
+
         pr.close();
     }
 
@@ -119,14 +164,18 @@ class BinarySearchTree<E extends Comparable<E>> {
 
     public void insert(E data) {
         root = insert(root, data);
+/*
+        System.out.println("************MIN:"+root.getLocalMin().getData());
+        System.out.println("************MAX:"+root.getLocalMax().getData());
+        */
     }
 
-    public E q(E data) {
-        return findGreaterOrEquals(root, null, data).getData();
+    public void remove(E data) {
+        root = remove(root, data);
     }
 
-    public int rank(E data) {
-        return rank(root, 0, data);
+    public boolean contains(E data) {
+        return contains(root, data);
     }
 
     protected ListNode<E> insert(ListNode<E> currNode, E data) {
@@ -139,41 +188,46 @@ class BinarySearchTree<E extends Comparable<E>> {
         if (comparison <= 0) {
             ListNode<E> insertion = insert(currNode.getLeft(), data);
             currNode.setLeft(insertion);
-            insertion.setParent(currNode);
         } else if (comparison > 0) {
             ListNode<E> insertion = insert(currNode.getRight(), data);
             currNode.setRight(insertion);
-            insertion.setParent(currNode);
         }
 
         updateHeight(currNode);
 
         updateSize(currNode);
 
+        //updateLocalMin(currNode);
+        //updateLocalMax(currNode);
+
         currNode = rebalance(currNode);
 
         return currNode;
     }
 
-    protected ListNode<E> remove(ListNode<E> currNode, E data) {
+    public ListNode<E> remove(ListNode<E> currNode, E data) {
         if (currNode == null) {
-            throw new NoSuchElementException();
+            return null;
         }
 
         int comparison = data.compareTo(currNode.getData());
 
         if (comparison < 0) {
-            ListNode<E> leftSubtree = remove(currNode.getLeft(), data);
-            leftSubtree.setParent(currNode);
-            currNode.setLeft(leftSubtree);
+            if (currNode.hasLeft()) {
+                ListNode<E> leftSubtree = remove(currNode.getLeft(), data);
+                currNode.setLeft(leftSubtree);
 
-            return currNode;
+                return currNode;
+            }
         } else if (comparison > 0) {
-            ListNode<E> rightSubtree = remove(currNode.getRight(), data);
-            rightSubtree.setParent(currNode);
-            currNode.setRight(rightSubtree);
+            if (currNode.hasRight()) {
 
-            return currNode;
+                ListNode<E> rightSubtree = remove(currNode.getRight(), data);
+                currNode.setRight(rightSubtree);
+
+                return currNode;
+            }
+
         } else if (comparison == 0) {
             if (currNode.hasBoth()) { // wtf case, has two child
 
@@ -185,110 +239,182 @@ class BinarySearchTree<E extends Comparable<E>> {
                 // 4. remove successor's node
 
                 ListNode<E> successor = successor(currNode);
+
                 currNode.setData(successor.getData());
 
                 ListNode<E> rightSubtree = remove(currNode.getRight(), successor.getData());
-                rightSubtree.setParent(currNode);
+
                 currNode.setRight(rightSubtree);
 
             } else if (!currNode.hasLeft() && !currNode.hasRight()) { // has no child
                 currNode = null;
             } else { // current node has one child
-                if (currNode == currNode.getParent().getLeft()) { // current node is at the left of parent node
-                    if (currNode.hasLeft()) {
-                        ListNode<E> left = currNode.getLeft();
-
-                        left.setParent(currNode.getParent());
-
-                        currNode.setLeft(null);
-                        currNode = left;
-                    } else if (currNode.hasRight()) {
-                        ListNode<E> right = currNode.getRight();
-
-                        right.setParent(currNode.getParent());
-
-                        currNode.setRight(null);
-                        currNode = right;
-                    }
-                } else if (currNode == currNode.getParent().getRight()) { // current node is at the right of parent node
-                    if (currNode.hasLeft()) {
-                        ListNode<E> left = currNode.getLeft();
-
-                        left.setParent(currNode.getParent());
-
-                        currNode.setLeft(null);
-                        currNode = left;
-
-                    } else if (currNode.hasRight()) {
-                        ListNode<E> right = currNode.getRight();
-
-                        currNode.getRight().setParent(currNode.getParent());
-
-                        currNode.setRight(null);
-                        currNode = right;
-                    }
+                if (currNode.hasLeft()) {
+                    return currNode.getLeft();
+                } else if (currNode.hasRight()) {
+                    return currNode.getRight();
                 }
             }
-
-            updateHeight(currNode);
-            updateSize(currNode);
-
-            currNode = rebalance(currNode);
-
-            return currNode;
         }
+
+        updateHeight(currNode);
+        updateSize(currNode);
+
+        //updateLocalMin(currNode);
+        //updateLocalMax(currNode);
+
+        currNode = rebalance(currNode);
 
         return currNode;
     }
 
-    // precond: data must exist
-    private int rank(ListNode<E> currNode, int currResult, E data) {
+    protected boolean contains(ListNode<E> currNode, E data) {
+        if (currNode == null) {
+            return false;
+        }
 
-        if (data.compareTo(currNode.getData()) < 0) {
-            // data is less than current node, recurse left
-            return rank(currNode.getLeft(), currResult, data);
-        } else if (data.compareTo(currNode.getData()) > 0) {
-            // data is greater than current node, recurse right
+        int comparison = data.compareTo(currNode.getData());
 
-            if (currNode.hasLeft()) {
-                currResult += currNode.getLeft().getSize();
-            }
-
-            currResult += 1;
-
-            return rank(currNode.getRight(), currResult, data);
+        if (comparison > 0) {
+            return contains(currNode.getRight(), data);
+        } else if (comparison < 0) {
+            return contains(currNode.getLeft(), data);
         } else {
-            // data is equal to current node, return result
-
-            if(currNode.hasLeft() && currNode.hasRight()){
-                currResult += currNode.getLeft().getSize();
-            }
-
-            return currResult;
+            return true;
         }
     }
 
-    private ListNode<E> findGreaterOrEquals(ListNode<E> currNode, ListNode<E> currResult, E data) {
+    protected int rangeCount(E start, E end) {
+        if (root == null) {
+            // empty tree
+            return 0;
+        }
+
+        ListNode<E> startNode;
+        ListNode<E> endNode;
+
+        startNode = fuzzySearchStartNode(root, start);
+        endNode = fuzzySearchEndNode(root, end);
+
+
+
+/*
+        System.out.println("----nodes---");
+        System.out.println(startNode!= null? startNode.getData():"OMG");
+        System.out.println(endNode!= null? endNode.getData():"OMG");
+*/
+        if (startNode == null || endNode == null) {
+            // startNode == null as the 'start' is larger than the maximum in the tree
+            // endNode == null as the 'end' is smaller than the minimum in the tree
+            return 0;
+        }
+
+        //System.out.println(endNode.getData());
+
+        if (end.compareTo(endNode.getData()) == 0) {
+            // need to exclude the node if match
+
+            // change the end node to its predecessor instead
+            endNode = predecessor(endNode);
+
+            // no predecessor
+            if (endNode == null) {
+                return 0;
+            }
+        }
+
+        //System.out.println(endNode.getData());
+
+
+        return rank(root, endNode.getData()) -
+                rank(root, startNode.getData()) +
+                1;
+    }
+
+    protected ListNode<E> fuzzySearchStartNode(ListNode<E> currNode, E data) {
         if (currNode == null) {
-            // reached the bottom, return result so far
-            return currResult;
+            return null;
         }
 
-        if (data.compareTo(currNode.getData()) <= 0) {
-            // data is less than or equal to the current node
-            // set the result so far to current node
-            currResult = currNode;
-        }
+        int comparison = data.compareTo(currNode.getData());
+        if (comparison > 0) {
+            return fuzzySearchStartNode(currNode.getRight(), data);
+        } else if (comparison < 0) {
+            ListNode<E> nodeFoundInLeftSubtree = fuzzySearchStartNode(currNode.getLeft(), data);
 
-        if (data.compareTo(currNode.getData()) < 0) {
-            // data is less than current node, recurse left
-            return findGreaterOrEquals(currNode.getLeft(), currResult, data);
-        } else if (data.compareTo(currNode.getData()) > 0) {
-            // data is greater than current node, recurse right
-            return findGreaterOrEquals(currNode.getRight(), currResult, data);
+            if (nodeFoundInLeftSubtree == null) {
+                return currNode;
+            } else {
+                return nodeFoundInLeftSubtree;
+            }
         } else {
-            // data is equal to current node, return result
-            return currResult;
+            return currNode;
+        }
+    }
+
+    protected ListNode<E> fuzzySearchEndNode(ListNode<E> currNode, E data) {
+        if (currNode == null) {
+            return null;
+        }
+
+        int comparison = data.compareTo(currNode.getData());
+        if (comparison > 0) {
+            /*
+            ListNode<E> rightSubtreeLocalMin = currNode.getRight().getLocalMin();
+            ListNode<E> rightSubtreeLocalMax = currNode.getRight().getLocalMax();
+
+            boolean isInRightSubtree = data.compareTo(rightSubtreeLocalMin.getData()) >= 0 &&
+                    data.compareTo(rightSubtreeLocalMax.getData()) <= 0;
+
+            if (isInRightSubtree) {
+                return fuzzySearchEndNode(currNode.getRight(), data);
+            } else {
+                return currNode;
+            }
+            */
+
+            ListNode<E> nodeFoundInRightSubtree = fuzzySearchEndNode(currNode.getRight(), data);
+
+            if (nodeFoundInRightSubtree == null) {
+                return currNode;
+            } else {
+                return nodeFoundInRightSubtree;
+            }
+
+        } else if (comparison < 0) {
+            return fuzzySearchEndNode(currNode.getLeft(), data);
+        } else {
+            return currNode;
+        }
+    }
+
+    public void inOrderTraversal(ListNode<E> currNode) {
+        if (currNode == null) {
+            return;
+        }
+        inOrderTraversal(currNode.getLeft());
+        System.out.println(currNode.getData().toString() + "[" + rank(root, currNode.getData()) + "]");
+        inOrderTraversal(currNode.getRight());
+    }
+
+    protected int rank(ListNode<E> currNode, E data) {
+
+        if (currNode == null) {
+            return 0;
+        } else if (data.compareTo(currNode.getData()) < 0) {
+            return rank(currNode.getLeft(), data);
+        } else if (data.compareTo(currNode.getData()) > 0) {
+            return rank(currNode.getRight(), data) + size(currNode.getLeft()) + 1;
+        } else {
+            return size(currNode.getLeft());
+        }
+    }
+
+    protected int size(ListNode<E> currNode) {
+        if (currNode == null) {
+            return 0;
+        } else {
+            return currNode.getSize();
         }
     }
 
@@ -296,54 +422,51 @@ class BinarySearchTree<E extends Comparable<E>> {
         // https://www.cise.ufl.edu/~nemo/cop3530/AVL-Tree-Rotations.pdf
         // check page 5 for pseudocode. More human readable than the lecture notes.
 
-        // less efficient due to more comparison operation
-        // but more readable
-        if (isLeftLeftCase(currNode)) {
-            currNode = rotateRight(currNode);
+        int currNodeBF = balanceFactor(currNode);
 
-        } else if (isLeftRightCase(currNode)) {
-            currNode.setLeft(rotateLeft(currNode.getLeft()));
-            currNode = rotateRight(currNode);
+        if (currNodeBF == 2) {
+            int leftNodeBF = balanceFactor(currNode.getLeft());
 
-        } else if (isRightRightCase(currNode)) {
-            currNode = rotateLeft(currNode);
+            if (isLeftLeftCase(currNodeBF, leftNodeBF)) {
+                currNode = rotateRight(currNode);
 
-        } else if (isRightLeftCase(currNode)) {
-            currNode.setRight(rotateRight(currNode.getRight()));
-            currNode = rotateLeft(currNode);
+            } else if (isLeftRightCase(currNodeBF, leftNodeBF)) {
+                currNode.setLeft(rotateLeft(currNode.getLeft()));
+                currNode = rotateRight(currNode);
 
+            }
+        } else if (currNodeBF == -2) {
+            int rightNodeBF = balanceFactor(currNode.getRight());
+
+            if (isRightRightCase(currNodeBF, rightNodeBF)) {
+                currNode = rotateLeft(currNode);
+
+            } else if (isRightLeftCase(currNodeBF, rightNodeBF)) {
+                currNode.setRight(rotateRight(currNode.getRight()));
+                currNode = rotateLeft(currNode);
+            }
         }
 
         return currNode;
     }
 
-    protected boolean isLeftLeftCase(ListNode<E> currNode) {
-        int currNodeBF = balanceFactor(currNode);
-        int leftNodeBF = balanceFactor(currNode.getLeft());
+    protected boolean isLeftLeftCase(int currNodeBF, int leftNodeBF) {
 
         return currNodeBF == 2 && // left heavy
                 (leftNodeBF >= 0 && leftNodeBF <= 1); // left heavy
     }
 
-    protected boolean isLeftRightCase(ListNode<E> currNode) {
-        int currNodeBF = balanceFactor(currNode);
-        int leftNodeBF = balanceFactor(currNode.getLeft());
-
+    protected boolean isLeftRightCase(int currNodeBF, int leftNodeBF) {
         return currNodeBF == 2 && // left heavy
                 (leftNodeBF == -1); // right heavy
     }
 
-    private boolean isRightRightCase(ListNode<E> currNode) {
-        int currNodeBF = balanceFactor(currNode);
-        int rightNodeBF = balanceFactor(currNode.getRight());
-
+    private boolean isRightRightCase(int currNodeBF, int rightNodeBF) {
         return currNodeBF == -2 && // right heavy
                 (rightNodeBF >= -1 && rightNodeBF <= 0); // right heavy
     }
 
-    private boolean isRightLeftCase(ListNode<E> currNode) {
-        int currNodeBF = balanceFactor(currNode);
-        int rightNodeBF = balanceFactor(currNode.getRight());
+    private boolean isRightLeftCase(int currNodeBF, int rightNodeBF) {
 
         return currNodeBF == -2 && // right heavy
                 (rightNodeBF == 1); // left heavy
@@ -360,25 +483,24 @@ class BinarySearchTree<E extends Comparable<E>> {
         if (currNode.hasRight()) {
             rightSubtree = currNode.getRight();
 
-            rightSubtree.setParent(currNode.getParent());
-            currNode.setParent(rightSubtree);
             currNode.setRight(rightSubtree.getLeft());
-
-            if (rightSubtree.hasLeft()) {
-                rightSubtree.getLeft().setParent(currNode);
-            }
 
             rightSubtree.setLeft(currNode);
 
             updateHeight(rightSubtree);
             updateHeight(currNode);
 
-            updateSize(rightSubtree);
-            updateSize(currNode);
+            // we only care about the size of left subtree
+            //updateSize(rightSubtree);
+            //updateSize(currNode);
 
-        } else {
-            // wtf?
-            assert false : "If you spin it without right child the subtree will be BROKEN!";
+            //updateLocalMin(rightSubtree);
+            //updateLocalMax(rightSubtree);
+
+            //updateLocalMin(currNode);
+            //updateLocalMax(currNode);
+
+
         }
 
         return rightSubtree;
@@ -395,13 +517,7 @@ class BinarySearchTree<E extends Comparable<E>> {
         if (currNode.hasLeft()) {
             leftSubtree = currNode.getLeft();
 
-            leftSubtree.setParent(currNode.getParent());
-            currNode.setParent(leftSubtree);
             currNode.setLeft(leftSubtree.getRight());
-
-            if (leftSubtree.hasRight()) {
-                leftSubtree.getRight().setParent(currNode);
-            }
 
             leftSubtree.setRight(currNode);
 
@@ -410,6 +526,12 @@ class BinarySearchTree<E extends Comparable<E>> {
 
             updateSize(currNode);
             updateSize(leftSubtree);
+
+            //updateLocalMin(currNode);
+            //updateLocalMax(currNode);
+
+            //updateLocalMin(leftSubtree);
+            //updateLocalMax(leftSubtree);
 
         } else {
             // wtf?
@@ -435,24 +557,58 @@ class BinarySearchTree<E extends Comparable<E>> {
                     -> the successor is the first encounter on the right. like "<". (now it's case 2.1) [FOUND]
          */
 
-        // following code implemented according to the visualgo pseudocode
+        // found iterative version from stackoverflow
+        // http://stackoverflow.com/questions/3796003/find-the-successor-without-using-parent-pointer
+
         if (currNode.hasRight()) {
             return minimum(currNode.getRight());
         } else {
-            ListNode<E> parent = currNode.getParent();
+            ListNode<E> result = null;
+            ListNode<E> parent = root;
 
-            while (parent != null && currNode == parent.getRight()) {
-                currNode = parent;
-                parent = currNode.getParent();
+            while (root != currNode) {
+                if (currNode.getData().compareTo(parent.getData()) < 0) {
+                    result = parent;
+                    parent = parent.getLeft();
+                } else {
+                    parent = parent.getRight();
+                }
             }
-
-            if (parent == null) {
-                throw new NoSuchElementException("Sad little one has no sucessor :'(");
-            } else {
-                return parent;
-            }
+            return result;
         }
 
+    }
+
+    private ListNode<E> predecessor(ListNode<E> currNode) {
+        if (currNode.hasLeft()) {
+            return maximum(currNode.getLeft());
+        } else {
+            ListNode<E> result = null;
+            ListNode<E> parent = root;
+
+            while (root != currNode) {
+                if (currNode.getData().compareTo(parent.getData()) > 0) {
+                    result = parent;
+                    parent = parent.getRight();
+                } else {
+                    parent = parent.getLeft();
+                }
+            }
+            return result;
+        }
+    }
+
+    protected ListNode<E> maximum(ListNode<E> currNode) {
+        if (currNode == null) {
+            // empty tree
+            throw new NoSuchElementException("There's NOTHING in an empty tree. Go home you're drunk.");
+        }
+
+        if (currNode.hasRight()) {
+            return maximum(currNode.getRight());
+        } else {
+            return currNode;
+        }
     }
 
     protected ListNode<E> minimum(ListNode<E> currNode) {
@@ -477,6 +633,67 @@ class BinarySearchTree<E extends Comparable<E>> {
         int rightHeight = currNode.hasRight() ? currNode.getRight().getHeight() : -1;
 
         return leftHeight - rightHeight;
+    }
+    // not used
+    protected ListNode<E> updateLocalMax(ListNode<E> currNode) {
+        if (currNode == null) {
+            return null;
+        }
+
+        if (currNode.hasBoth()) {
+            ListNode<E> leftSubtreeLocalMax = updateLocalMax(currNode.getLeft());
+            ListNode<E> rightSubtreeLocalMax = updateLocalMax(currNode.getRight());
+            ListNode<E> currLocalMax = currNode.getLocalMax();
+
+            ListNode<E> childrenMax = leftSubtreeLocalMax.getData().compareTo(rightSubtreeLocalMax.getData()) > 0 ? leftSubtreeLocalMax : rightSubtreeLocalMax;
+
+            currNode.setLocalMax(childrenMax.getData().compareTo(currLocalMax.getData()) > 0 ? childrenMax : currLocalMax);
+        } else if (currNode.hasLeft()) {
+            ListNode<E> leftSubtreeLocalMax = updateLocalMax(currNode.getLeft());
+            ListNode<E> currLocalMax = currNode.getLocalMax();
+
+            currNode.setLocalMax(leftSubtreeLocalMax.getData().compareTo(currLocalMax.getData()) > 0 ? leftSubtreeLocalMax : currLocalMax);
+        } else if (currNode.hasRight()) {
+            ListNode<E> rightSubtreeLocalMax = updateLocalMax(currNode.getRight());
+            ListNode<E> currLocalMax = currNode.getLocalMax();
+
+            currNode.setLocalMax(rightSubtreeLocalMax.getData().compareTo(currLocalMax.getData()) > 0 ? rightSubtreeLocalMax : currLocalMax);
+        } else { // if current node has both child
+            currNode.setLocalMax(currNode);
+        }
+
+        return currNode.getLocalMax();
+    }
+
+    // not used
+    protected ListNode<E> updateLocalMin(ListNode<E> currNode) {
+        if (currNode == null) {
+            return null;
+        }
+
+        if (currNode.hasBoth()) {
+            ListNode<E> leftSubtreeLocalMin = updateLocalMin(currNode.getLeft());
+            ListNode<E> rightSubtreeLocalMin = updateLocalMin(currNode.getRight().getLocalMin());
+            ListNode<E> currLocalMin = currNode.getLocalMin();
+
+            ListNode<E> childrenMin = leftSubtreeLocalMin.getData().compareTo(rightSubtreeLocalMin.getData()) < 0 ? leftSubtreeLocalMin : rightSubtreeLocalMin;
+
+            currNode.setLocalMin(childrenMin.getData().compareTo(currLocalMin.getData()) < 0 ? childrenMin : currLocalMin);
+        } else if (currNode.hasLeft()) {
+            ListNode<E> leftSubtreeLocalMin = updateLocalMin(currNode.getLeft());
+            ListNode<E> currLocalMin = currNode.getLocalMin();
+
+            currNode.setLocalMin(leftSubtreeLocalMin.getData().compareTo(currLocalMin.getData()) < 0 ? leftSubtreeLocalMin : currLocalMin);
+        } else if (currNode.hasRight()) {
+            ListNode<E> rightSubtreeLocalMin = updateLocalMin(currNode.getRight());
+            ListNode<E> currLocalMin = currNode.getLocalMin();
+
+            currNode.setLocalMin(rightSubtreeLocalMin.getData().compareTo(currLocalMin.getData()) < 0 ? rightSubtreeLocalMin : currLocalMin);
+        } else {
+            currNode.setLocalMin(currNode);
+        }
+
+        return currNode.getLocalMin();
     }
 
     protected int updateHeight(ListNode<E> currNode) {
@@ -505,15 +722,37 @@ class ListNode<E extends Comparable<E>> {
     private E data;
     private int height;
     private int size;
-    private ListNode<E> parent;
+
+    private ListNode<E> localMax;
+    private ListNode<E> localMin;
+
+    //private ListNode<E> parent;
     private ListNode<E> left;
     private ListNode<E> right;
 
     public ListNode(E data) {
         this.data = data;
-        this.parent = null;
+        this.localMin = this;
+        this.localMax = this;
+        //this.parent = null;
         this.left = null;
         this.right = null;
+    }
+
+    public ListNode<E> getLocalMax() {
+        return localMax;
+    }
+
+    public void setLocalMax(ListNode<E> localMax) {
+        this.localMax = localMax;
+    }
+
+    public ListNode<E> getLocalMin() {
+        return localMin;
+    }
+
+    public void setLocalMin(ListNode<E> localMin) {
+        this.localMin = localMin;
     }
 
     public E getData() {
@@ -540,14 +779,16 @@ class ListNode<E extends Comparable<E>> {
         this.size = size;
     }
 
-    public ListNode<E> getParent() {
-        return parent;
-    }
+    /*
 
-    public void setParent(ListNode<E> parent) {
-        this.parent = parent;
-    }
+        public ListNode<E> getParent() {
+            return parent;
+        }
 
+        public void setParent(ListNode<E> parent) {
+            this.parent = parent;
+        }
+    */
     public ListNode<E> getLeft() {
         return left;
     }
@@ -574,121 +815,5 @@ class ListNode<E extends Comparable<E>> {
 
     public boolean hasBoth() {
         return hasLeft() && hasRight();
-    }
-
-}
-
-/////////////
-
-class Printer {
-    /**
-     * Print a tree
-     *
-     * @param root tree root node
-     */
-    public static void print(ListNode root) {
-        List<List<String>> lines = new ArrayList<List<String>>();
-
-        List<ListNode> level = new ArrayList<ListNode>();
-        List<ListNode> next = new ArrayList<ListNode>();
-
-        level.add(root);
-        int nn = 1;
-
-        int widest = 0;
-
-        while (nn != 0) {
-            List<String> line = new ArrayList<String>();
-
-            nn = 0;
-
-            for (ListNode n : level) {
-                if (n == null) {
-                    line.add(null);
-
-                    next.add(null);
-                    next.add(null);
-                } else {
-                    String aa = n.getData().toString() + " [H:" + n.getHeight() + ", S:" + n.getSize() + "]";
-                    line.add(aa);
-                    if (aa.length() > widest) widest = aa.length();
-
-                    next.add(n.getLeft());
-                    next.add(n.getRight());
-
-                    if (n.getLeft() != null) nn++;
-                    if (n.getRight() != null) nn++;
-                }
-            }
-
-            if (widest % 2 == 1) widest++;
-
-            lines.add(line);
-
-            List<ListNode> tmp = level;
-            level = next;
-            next = tmp;
-            next.clear();
-        }
-
-        int perpiece = lines.get(lines.size() - 1).size() * (widest + 4);
-        for (int i = 0; i < lines.size(); i++) {
-            List<String> line = lines.get(i);
-            int hpw = (int) Math.floor(perpiece / 2f) - 1;
-
-            if (i > 0) {
-                for (int j = 0; j < line.size(); j++) {
-
-                    // split node
-                    char c = ' ';
-                    if (j % 2 == 1) {
-                        if (line.get(j - 1) != null) {
-                            c = (line.get(j) != null) ? '┴' : '┘';
-                        } else {
-                            if (j < line.size() && line.get(j) != null) c = '└';
-                        }
-                    }
-                    System.out.print(c);
-
-                    // lines and spaces
-                    if (line.get(j) == null) {
-                        for (int k = 0; k < perpiece - 1; k++) {
-                            System.out.print(" ");
-                        }
-                    } else {
-
-                        for (int k = 0; k < hpw; k++) {
-                            System.out.print(j % 2 == 0 ? " " : "─");
-                        }
-                        System.out.print(j % 2 == 0 ? "┌" : "┐");
-                        for (int k = 0; k < hpw; k++) {
-                            System.out.print(j % 2 == 0 ? "─" : " ");
-                        }
-                    }
-                }
-                System.out.println();
-            }
-
-            // print line of numbers
-            for (int j = 0; j < line.size(); j++) {
-
-                String f = line.get(j);
-                if (f == null) f = "";
-                int gap1 = (int) Math.ceil(perpiece / 2f - f.length() / 2f);
-                int gap2 = (int) Math.floor(perpiece / 2f - f.length() / 2f);
-
-                // a number
-                for (int k = 0; k < gap1; k++) {
-                    System.out.print(" ");
-                }
-                System.out.print(f);
-                for (int k = 0; k < gap2; k++) {
-                    System.out.print(" ");
-                }
-            }
-            System.out.println();
-
-            perpiece /= 2;
-        }
     }
 }
