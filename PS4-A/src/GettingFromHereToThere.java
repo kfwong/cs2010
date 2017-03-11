@@ -45,6 +45,10 @@ class GettingFromHereToThere {
         // reinitialize just in case it's dirty
         queue = new PriorityQueue<>();
 
+        // clear the maxCostMatrix for new test case
+        // For this PS4, we restrict range from [0..min(9,V-1)]
+        maxCostMatrix = new int[10][V];
+
         // initialize all vertices default max cost so far as -1
         maxCost = new int[V];
 
@@ -57,11 +61,15 @@ class GettingFromHereToThere {
         for (int i = 0; i < V; i++) {
             mst2.add(new ArrayList<>());
         }
+
+        buildMST(0);
+
+        buildMaxCostMatrix();
+
+        //prettyPrint(maxCostMatrix);
     }
 
-    int Query(int source, int destination) {
-        int ans;
-
+    private void buildMST(int source) {
         int processedVerticesCount = 0;
 
         // You have to report the weight of a corridor (an edge)
@@ -108,7 +116,9 @@ class GettingFromHereToThere {
                     mst.add(new IntegerTriple(edge.third(), edge.second(), edge.first()));
                 }
 
+                // two way!
                 mst2.get(edge.third()).add(new IntegerPair(edge.second(), edge.first()));
+                mst2.get(edge.second()).add(new IntegerPair(edge.third(), edge.first()));
 
                 // get the newly added vertex's index
                 int vIndex = edge.second();
@@ -131,7 +141,20 @@ class GettingFromHereToThere {
 
         maxCostMatrix[source] = maxCost;
 
-        ans = maxCost[destination];
+    }
+
+    private void buildMaxCostMatrix() {
+        // i=0 built by MST
+        for (int i = 1; i < Math.min(V, 10); i++) {
+            dfsHelper(i);
+        }
+
+    }
+
+    int Query(int source, int destination) {
+        int ans;
+
+        ans = maxCostMatrix[source][destination];
         //System.out.println(maxCost);
 /*
         mst.forEach(it -> {
@@ -140,7 +163,7 @@ class GettingFromHereToThere {
 */
         //prettyPrint(AdjMat);
 
-        dfsHelper(source);
+        //dfsHelper(source);
 
         //System.out.println();
 
@@ -193,6 +216,7 @@ class GettingFromHereToThere {
         visited = new boolean[V];
         maxCost = new int[V];
         dfs(u, 0, -1);
+        maxCostMatrix[u] = maxCost;
     }
 
     void run() throws Exception {
@@ -219,16 +243,13 @@ class GettingFromHereToThere {
                 }
             }
 
+            PreProcess(); // you may want to use this function or leave it empty if you do not need it
+
             int Q = sc.nextInt();
             while (Q-- > 0) {
                 int src = sc.nextInt();
                 int dest = sc.nextInt();
 
-                // clear the maxCostMatrix for new test case
-                // For this PS4, we restrict range from [0..min(9,V-1)]
-                maxCostMatrix = new int[10][2000];
-
-                PreProcess(); // you may want to use this function or leave it empty if you do not need it
                 pr.println(Query(src, dest));
 
             }
