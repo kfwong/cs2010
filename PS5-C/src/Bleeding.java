@@ -5,7 +5,7 @@ import java.io.*;
 
 // write your matric number here: A0138862W
 // write your name here: Wong Kang Fei
-// write list of collaborators here:
+// write list of collaborators here: Xing Kai, Dylan Chew (CS2010 alumni)
 // year 2017 hash code: x8DYWsALaAzykZ8dYPZP (do NOT delete this line)
 
 class Bleeding {
@@ -19,41 +19,36 @@ class Bleeding {
     // is accessible to all methods in this class
     // --------------------------------------------
 
-    // IntegerPair stores (dist[u], u)
-    //private PriorityQueue<IntegerPair> pq;
-
     // IntegerTriple stores (dist[u], u, k-hops)
     private PriorityQueue<IntegerTriple> pq;
 
-    // limited hops cheapest cost matrix
-    private int[] hopsMatrix;
-
-    private int[][] hopsMatrix2;
+    private int[][] hopsMatrix;
 
     // this variable initialize all distance to infinity, for quick System.arraycopy() only, not for calculation
     private int[] _dist;
+
+    // the minimum k hops to reach T
+    private int minKToReachT;
 
     // --------------------------------------------
 
     public void buildSSSP(int s, int t, int k) {
         // modified dijkstra
 
-        hopsMatrix2 = new int[k + 1][];
-/*
-        for (int i = 0; i <= k; i++) {
-            hopsMatrix2[i] = new int[V];
-            System.arraycopy(_dist, 0, hopsMatrix2[i], 0, V);
+        pq = new PriorityQueue<>();
+
+        minKToReachT = Integer.MAX_VALUE; // init to infinity hops
+
+        hopsMatrix = new int[k + 1][]; // index 0 is not used
+
+        for (int i = 1; i <= k; i++) { // init infinity from index 1 to k
+            hopsMatrix[i] = new int[V];
+            System.arraycopy(_dist, 0, hopsMatrix[i], 0, V); // uses memory block copy, faster than manual loop if elements > 25
         }
-*/
-        int dist[] = new int[V];
 
-        System.arraycopy(_dist, 0, dist, 0, V); // native byte code mem copy array, faster than manual loop if length>25
+        hopsMatrix[1][s] = 0; // init source distance cost as zero
 
-        dist[s] = 0; // init source distance cost as zero
-
-        //hopsMatrix2[1][s] = 0;
-
-        pq.offer(new IntegerTriple(0, s, 1));
+        pq.offer(new IntegerTriple(0, s, 1)); // push the source vertex to the priority queue
 
         while (!pq.isEmpty()) {
 
@@ -63,48 +58,38 @@ class Bleeding {
             int currVertex = processingVertex._second;
             int currHops = processingVertex._third;
 
-            if (hopsMatrix2[currHops] == null) {
-                hopsMatrix2[currHops] = new int[V];
-                System.arraycopy(dist, 0, hopsMatrix2[currHops], 0, V);
+            if (currVertex == t) {
+                // found the the destination! update min and early return, no need to process further!
+                minKToReachT = currHops;
+                return;
             }
 
-            if (currDistance == dist[currVertex]) { // lazy pq check
-                for (IntegerPair adjVertex : AdjList.get(currVertex)) {
+            if (currHops == k) {
+                // ignore processing current vertex if the currHops already reach k but not yet reach destination t
+                continue;
+            }
+
+            if (currDistance == hopsMatrix[currHops][currVertex]) { // lazy pq check
+                AdjList.get(currVertex).forEach(adjVertex -> {
                     int toVertex = adjVertex._first;
                     int weight = adjVertex._second;
 
-                    int distanceIfExcludeThisVertex = dist[currVertex];
-                    int distanceIfIncludeThisVertex = dist[currVertex] + weight;
+                    int distanceIfIncludeThisVertex = hopsMatrix[currHops][currVertex] + weight;
 
-                    if (currHops < k) {
-                        if (dist[toVertex] > distanceIfIncludeThisVertex) {
-                            dist[toVertex] = distanceIfIncludeThisVertex;
-                        }
-
+                    if (hopsMatrix[currHops + 1][toVertex] > distanceIfIncludeThisVertex) {
+                        hopsMatrix[currHops + 1][toVertex] = distanceIfIncludeThisVertex;
                         pq.offer(new IntegerTriple(distanceIfIncludeThisVertex, toVertex, currHops + 1)); // re-enqueue this vertex
-
-                    } else if (currHops == k) {
-                        if (currVertex == t) {
-                            if (dist[toVertex] > distanceIfIncludeThisVertex) {
-                                dist[toVertex] = distanceIfIncludeThisVertex;
-                            }
-                        }
                     }
 
-                }
+                });
             }
         }
-
-        hopsMatrix = dist;
     }
 
     public Bleeding() {
         // Write necessary code during construction
         //
         // write your answer here
-
-        pq = new PriorityQueue<>();
-
     }
 
     void PreProcess() {
@@ -117,8 +102,6 @@ class Bleeding {
     }
 
     int Query(int s, int t, int k) {
-        int ans = -1;
-
         // You have to report the shortest path from Ket Fah's current position s
         // to reach the chosen hospital t, output -1 if t is not reachable from s
         // with one catch: this path cannot use more than k vertices
@@ -127,13 +110,15 @@ class Bleeding {
 
         buildSSSP(s, t, k);
 
+        if (minKToReachT == Integer.MAX_VALUE) {
+            return -1;
+        } else {
+            return (hopsMatrix[minKToReachT][t] == Integer.MAX_VALUE) ? -1 : hopsMatrix[minKToReachT][t];
+        }
 
-        ans = (hopsMatrix[t] == Integer.MAX_VALUE) ? -1 : hopsMatrix[t];
-        //ans = (hopsMatrix2[k][t] == Integer.MAX_VALUE) ? -1 : hopsMatrix2[k][t];
 
         //-------------------------------------------------------------------------
 
-        return ans;
     }
 
     // You can add extra function if needed
