@@ -35,22 +35,23 @@ class Bleeding {
 
     // --------------------------------------------
 
-    public void buildSSSP(int s, int k) {
+    public void buildSSSP(int s, int t, int k) {
         // modified dijkstra
 
-        hopsMatrix2 = new int[k+1][];
-
+        hopsMatrix2 = new int[k + 1][];
+/*
+        for (int i = 0; i <= k; i++) {
+            hopsMatrix2[i] = new int[V];
+            System.arraycopy(_dist, 0, hopsMatrix2[i], 0, V);
+        }
+*/
         int dist[] = new int[V];
 
         System.arraycopy(_dist, 0, dist, 0, V); // native byte code mem copy array, faster than manual loop if length>25
 
-        for(int i=0; i<=k; i++){
-            int dist2[] = new int[V];
-            System.arraycopy(dist, 0, dist2, 0, V);
-            hopsMatrix2[i] = dist2;
-        }
-
         dist[s] = 0; // init source distance cost as zero
+
+        //hopsMatrix2[1][s] = 0;
 
         pq.offer(new IntegerTriple(0, s, 1));
 
@@ -62,36 +63,39 @@ class Bleeding {
             int currVertex = processingVertex._second;
             int currHops = processingVertex._third;
 
-            prox(dist, currHops);
+            if (hopsMatrix2[currHops] == null) {
+                hopsMatrix2[currHops] = new int[V];
+                System.arraycopy(dist, 0, hopsMatrix2[currHops], 0, V);
+            }
 
             if (currDistance == dist[currVertex]) { // lazy pq check
-                AdjList.get(currVertex).forEach(adjVertex -> {
+                for (IntegerPair adjVertex : AdjList.get(currVertex)) {
                     int toVertex = adjVertex._first;
                     int weight = adjVertex._second;
 
+                    int distanceIfExcludeThisVertex = dist[currVertex];
                     int distanceIfIncludeThisVertex = dist[currVertex] + weight;
 
-                    if (currHops + 1 <= k) {
+                    if (currHops < k) {
                         if (dist[toVertex] > distanceIfIncludeThisVertex) {
                             dist[toVertex] = distanceIfIncludeThisVertex;
                         }
 
-                        pq.offer(new IntegerTriple(dist[toVertex], toVertex, currHops + 1)); // re-enqueue this vertex
+                        pq.offer(new IntegerTriple(distanceIfIncludeThisVertex, toVertex, currHops + 1)); // re-enqueue this vertex
+
+                    } else if (currHops == k) {
+                        if (currVertex == t) {
+                            if (dist[toVertex] > distanceIfIncludeThisVertex) {
+                                dist[toVertex] = distanceIfIncludeThisVertex;
+                            }
+                        }
                     }
 
-                });
+                }
             }
         }
 
         hopsMatrix = dist;
-    }
-
-    public void prox(int[] dist, int k){
-        for(int i=0; i<V; i++){
-            if(hopsMatrix2[k][i] == Integer.MAX_VALUE) {
-                hopsMatrix2[k][i] = dist[i];
-            }
-        }
     }
 
     public Bleeding() {
@@ -121,11 +125,11 @@ class Bleeding {
         //
         // write your answer here
 
-        buildSSSP(s, k);
+        buildSSSP(s, t, k);
 
 
-        //ans = (hopsMatrix[t] == Integer.MAX_VALUE) ? -1 : hopsMatrix[t];
-        ans = (hopsMatrix2[k][t] == Integer.MAX_VALUE) ? -1 : hopsMatrix2[k][t];
+        ans = (hopsMatrix[t] == Integer.MAX_VALUE) ? -1 : hopsMatrix[t];
+        //ans = (hopsMatrix2[k][t] == Integer.MAX_VALUE) ? -1 : hopsMatrix2[k][t];
 
         //-------------------------------------------------------------------------
 
